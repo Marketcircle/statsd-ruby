@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'socket'
 require 'zlib'
 
@@ -75,7 +77,7 @@ module GitHub
 
     def namespace=(namespace)
       @namespace = namespace
-      @prefix = namespace ? "#{@namespace}." : "".freeze
+      @prefix = namespace ? "#{@namespace}." : ""
     end
 
     # All the endpoints where StatsD will report metrics
@@ -87,10 +89,10 @@ module GitHub
     #characters that will be replaced with _ in stat names
     RESERVED_CHARS_REGEX = /[\:\|\@]/
 
-    COUNTER_TYPE = "c".freeze
-    TIMING_TYPE = "ms".freeze
-    GAUGE_TYPE = "g".freeze
-    HISTOGRAM_TYPE = "h".freeze
+    COUNTER_TYPE = 'c'
+    TIMING_TYPE = 'ms'
+    GAUGE_TYPE = 'g'
+    HISTOGRAM_TYPE = 'h'
 
     def initialize(client_class = nil)
       @shards = []
@@ -196,20 +198,11 @@ module GitHub
     def send(stat, delta, type, sample_rate=1)
       sampled(sample_rate) do
         stat = stat.to_s.dup
-        stat.gsub!(/::/, ".".freeze)
-        stat.gsub!(RESERVED_CHARS_REGEX, "_".freeze)
+        stat.gsub!(/::/, '.')
+        stat.gsub!(RESERVED_CHARS_REGEX, '_')
 
-        msg = String.new
-        msg << @prefix
-        msg << stat
-        msg << ":".freeze
-        msg << delta.to_s
-        msg << "|".freeze
-        msg << type
-        if sample_rate < 1
-          msg << "|@".freeze
-          msg << sample_rate.to_s
-        end
+        msg = "#{@prefix}#{stat}:#{delta}|#{type}"
+        msg << "|@#{sample_rate}" if sample_rate < 1
 
         shard = select_shard(stat)
         shard.send(msg)
@@ -247,7 +240,7 @@ module GitHub
       def send(msg)
         flush if @buffer.bytesize + msg.bytesize >= @buffer_cap
         @buffer << msg
-        @buffer << "\n".freeze
+        @buffer << "\n"
         nil
       end
     end
